@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Material Permanente</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: auto;
+        }
+        header {
+            background: #35424a;
+            color: #ffffff;
+            padding: 20px 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        header h1 {
+            text-align: center;
+            margin: 0;
+        }
+        nav ul {
+            padding: 0;
+            list-style: none;
+            text-align: center;
+        }
+        nav ul li {
+            display: inline;
+            margin: 0 15px;
+        }
+        nav ul li a {
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .section {
+            display: none; /* Esconder todas as seções inicialmente */
+            background: #ffffff;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .active {
+            display: block; /* Mostrar apenas a seção ativa */
+        }
+        h2 {
+            color: #35424a;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .btn {
+            background: #35424a;
+            color: #ffffff;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+        .btn:hover {
+            background: #45a049;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #35424a;
+            color: white;
+        }
+        .btn-edit {
+            background: #f0ad4e;
+        }
+        .btn-delete {
+            background: #d9534f;
+        }
+        footer {
+            text-align: center;
+            padding: 15px 0;
+            background: #35424a;
+            color: #ffffff;
+            position: relative;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Controle de Material Permanente - Obra Dlog</h1>
+            <nav>
+                <ul>
+                    <li><a href="#" onclick="showSection('home')">Início</a></li>
+                    <li><a href="#" onclick="showSection('cadastro')">Cadastrar Material</a></li>
+                    <li><a href="#" onclick="showSection('pesquisar')">Pesquisar Material</a></li>
+                    <li><a href="#" onclick="showSection('relacao')">Gerar Relação</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <section id="home" class="section active">
+            <h2>Bem-vindo ao Sistema de Controle</h2>
+            <p>Gerencie seus materiais permanentes de forma simples e eficiente.</p>
+        </section>
+
+        <section id="cadastro" class="section">
+            <h2>Cadastrar Material</h2>
+            <form id="cadastro-form" onsubmit="cadastrarMaterial(event)">
+                <input type="hidden" id="index-edicao" name="index-edicao" value="">
+                <label for="nome">Nome:</label>
+                <input type="text" id="nome" name="nome" required>
+
+                <label for="marca">Marca:</label>
+                <input type="text" id="marca" name="marca" required>
+
+                <label for="numero-serie">Número de Série:</label>
+                <input type="text" id="numero-serie" name="numero-serie" required>
+
+                <label for="quantidade">Quantidade:</label>
+                <input type="number" id="quantidade" name="quantidade" required>
+
+                <label for="situacao">Situação:</label>
+                <select id="situacao" name="situacao" required>
+                    <option value="disponível">Disponível</option>
+                    <option value="indisponível">Indisponível</option>
+                    <option value="manutenção">Em Manutenção</option>
+                </select>
+
+                <label for="condicao">Condição:</label>
+                <select id="condicao" name="condicao" required>
+                    <option value="novo">Novo</option>
+                    <option value="usado">Usado</option>
+                    <option value="danificado">Danificado</option>
+                </select>
+
+                <label for="observacoes">Observações:</label>
+                <textarea id="observacoes" name="observacoes"></textarea>
+
+                <label for="nome-obra">Nome da Obra:</label>
+                <input type="text" id="nome-obra" name="nome-obra" required>
+
+                <button type="submit" class="btn">Cadastrar</button>
+            </form>
+        </section>
+
+        <section id="pesquisar" class="section">
+            <h2>Pesquisar Material</h2>
+            <label for="search">Digite o nome do material:</label>
+            <input type="text" id="search" oninput="pesquisarMaterial()" placeholder="Pesquisar...">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Marca</th>
+                        <th>Nº de Série</th>
+                        <th>Quantidade</th>
+                        <th>Situação</th>
+                        <th>Condição</th>
+                        <th>Observações</th>
+                        <th>Nome da Obra</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tabela-pesquisa">
+                    <!-- Resultados da pesquisa aparecerão aqui -->
+                </tbody>
+            </table>
+        </section>
+
+        <section id="relacao" class="section">
+            <h2>Gerar Relação de Materiais</h2>
+            <button class="btn" onclick="gerarRelatorioXLSX()"><i class="fas fa-file-excel"></i> Baixar em XLSX</button>
+            <button class="btn" onclick="gerarRelatorioPDF()"><i class="fas fa-file-pdf"></i> Baixar em PDF</button>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Marca</th>
+                        <th>Nº de Série</th>
+                        <th>Quantidade</th>
+                        <th>Situação</th>
+                        <th>Condição</th>
+                        <th>Observações</th>
+                        <th>Nome da Obra</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tabela-relacao">
+                    <!-- Materiais cadastrados aparecerão aqui -->
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 JCD CAMPOS LTDA.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        let materiais = JSON.parse(localStorage.getItem('materiais')) || []; // Recuperar dados do Local Storage
+
+        document.addEventListener('DOMContentLoaded', atualizarTabela); // Atualiza tabela ao carregar a página
+
+        function showSection(section) {
+            const sections = document.querySelectorAll('.section');
+            sections.forEach(sec => sec.classList.remove('active'));
+            document.getElementById(section).classList.add('active');
+
+            if (section === 'pesquisar') {
+                atualizarTabelaPesquisa(); // Atualizar tabela de pesquisa ao abrir a seção
+            }
+        }
+
+        function cadastrarMaterial(event) {
+            event.preventDefault(); // Evitar o envio do formulário
+
+            const index = document.getElementById('index-edicao').value;
+            const nome = document.getElementById('nome').value;
+            const marca = document.getElementById('marca').value;
+            const numeroSerie = document.getElementById('numero-serie').value;
+            const quantidade = document.getElementById('quantidade').value;
+            const situacao = document.getElementById('situacao').value;
+            const condicao = document.getElementById('condicao').value;
+            const observacoes = document.getElementById('observacoes').value;
+            const nomeObra = document.getElementById('nome-obra').value;
+
+            if (index) {
+                // Atualizar material existente
+                materiais[index] = { nome, marca, numeroSerie, quantidade, situacao, condicao, observacoes, nomeObra };
+            } else {
+                // Adicionar novo material
+                materiais.push({ nome, marca, numeroSerie, quantidade, situacao, condicao, observacoes, nomeObra });
+            }
+
+            // Salvar no Local Storage
+            localStorage.setItem('materiais', JSON.stringify(materiais));
+
+            // Limpar o formulário
+            document.getElementById('cadastro-form').reset();
+            document.getElementById('index-edicao').value = ''; // Limpar index de edição
+            showSection('relacao'); // Ir para a seção de relação
+            atualizarTabela(); // Atualizar a tabela
+        }
+
+        function atualizarTabela() {
+            const tabela = document.getElementById('tabela-relacao');
+            tabela.innerHTML = ''; // Limpar tabela atual
+
+            materiais.forEach((material, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${material.nome}</td>
+                    <td>${material.marca}</td>
+                    <td>${material.numeroSerie}</td>
+                    <td>${material.quantidade}</td>
+                    <td>${material.situacao}</td>
+                    <td>${material.condicao}</td>
+                    <td>${material.observacoes}</td>
+                    <td>${material.nomeObra}</td>
+                    <td>
+                        <button onclick="editarMaterial(${index})" class="btn btn-edit"><i class="fas fa-edit"></i> Editar</button>
+                        <button onclick="removerMaterial(${index})" class="btn btn-delete"><i class="fas fa-trash"></i> Remover</button>
+                    </td>
+                `;
+                tabela.appendChild(row);
+            });
+        }
+
+        function atualizarTabelaPesquisa() {
+            const tabela = document.getElementById('tabela-pesquisa');
+            tabela.innerHTML = ''; // Limpar tabela de pesquisa
+
+            materiais.forEach((material, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${material.nome}</td>
+                    <td>${material.marca}</td>
+                    <td>${material.numeroSerie}</td>
+                    <td>${material.quantidade}</td>
+                    <td>${material.situacao}</td>
+                    <td>${material.condicao}</td>
+                    <td>${material.observacoes}</td>
+                    <td>${material.nomeObra}</td>
+                    <td>
+                        <button onclick="editarMaterial(${index})" class="btn btn-edit"><i class="fas fa-edit"></i> Editar</button>
+                        <button onclick="removerMaterial(${index})" class="btn btn-delete"><i class="fas fa-trash"></i> Remover</button>
+                    </td>
+                `;
+                tabela.appendChild(row);
+            });
+        }
+
+        function gerarRelatorioXLSX() {
+            const ws = XLSX.utils.json_to_sheet(materiais);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Materiais");
+
+            // Gerar o arquivo
+            XLSX.writeFile(wb, 'relacao_materiais.xlsx');
+        }
+
+        function gerarRelatorioPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFontSize(16);
+            doc.text("Relação de Materiais", 14, 20);
+            doc.setFontSize(12);
+            doc.text("Data: " + new Date().toLocaleDateString(), 14, 30);
+
+            const colunas = ["Nome", "Marca", "Nº de Série", "Quantidade", "Situação", "Condição", "Observações", "Nome da Obra"];
+            const linhas = materiais.map(material => [
+                material.nome,
+                material.marca,
+                material.numeroSerie,
+                material.quantidade,
+                material.situacao,
+                material.condicao,
+                material.observacoes,
+                material.nomeObra
+            ]);
+
+            const startY = 40;
+            const startX = 14;
+            const colWidths = [40, 30, 30, 20, 30, 30, 50, 30];
+            const headers = colunas.map((header, index) => {
+                return { content: header, styles: { fillColor: [53, 162, 235], textColor: 255 } };
+            });
+
+            // Adicionar cabeçalho
+            doc.autoTable({
+                head: [headers],
+                body: linhas,
+                startY,
+                margin: { horizontal: startX },
+                styles: { cellPadding: 5, fontSize: 10, overflow: 'linebreak' },
+                columnStyles: {
+                    0: { cellWidth: colWidths[0] },
+                    1: { cellWidth: colWidths[1] },
+                    2: { cellWidth: colWidths[2] },
+                    3: { cellWidth: colWidths[3] },
+                    4: { cellWidth: colWidths[4] },
+                    5: { cellWidth: colWidths[5] },
+                    6: { cellWidth: colWidths[6] },
+                    7: { cellWidth: colWidths[7] }
+                },
+            });
+
+            doc.save("relacao_materiais.pdf");
+        }
+
+        function editarMaterial(index) {
+            const material = materiais[index];
+            document.getElementById('index-edicao').value = index;
+            document.getElementById('nome').value = material.nome;
+            document.getElementById('marca').value = material.marca;
+            document.getElementById('numero-serie').value = material.numeroSerie;
+            document.getElementById('quantidade').value = material.quantidade;
+            document.getElementById('situacao').value = material.situacao;
+            document.getElementById('condicao').value = material.condicao;
+            document.getElementById('observacoes').value = material.observacoes;
+            document.getElementById('nome-obra').value = material.nomeObra;
+            showSection('cadastro'); // Voltar para a seção de cadastro
+        }
+
+        function removerMaterial(index) {
+            materiais.splice(index, 1); // Remover material do array
+            localStorage.setItem('materiais', JSON.stringify(materiais)); // Atualizar Local Storage
+            atualizarTabela(); // Atualizar tabela após remoção
+            atualizarTabelaPesquisa(); // Atualizar tabela de pesquisa após remoção
+        }
+
+        function pesquisarMaterial() {
+            const searchTerm = document.getElementById('search').value.toLowerCase();
+            const tabela = document.getElementById('tabela-pesquisa');
+            tabela.innerHTML = ''; // Limpar tabela de pesquisa
+
+            const resultados = materiais.filter(material => material.nome.toLowerCase().includes(searchTerm));
+
+            resultados.forEach((material, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${material.nome}</td>
+                    <td>${material.marca}</td>
+                    <td>${material.numeroSerie}</td>
+                    <td>${material.quantidade}</td>
+                    <td>${material.situacao}</td>
+                    <td>${material.condicao}</td>
+                    <td>${material.observacoes}</td>
+                    <td>${material.nomeObra}</td>
+                    <td>
+                        <button onclick="editarMaterial(${index})" class="btn btn-edit"><i class="fas fa-edit"></i> Editar</button>
+                        <button onclick="removerMaterial(${index})" class="btn btn-delete"><i class="fas fa-trash"></i> Remover</button>
+                    </td>
+                `;
+                tabela.appendChild(row);
+            });
+        }
+    </script>
+</body>
+</html>

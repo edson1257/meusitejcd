@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Funcionários</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        header {
+            background: #333;
+            color: #fff;
+            padding: 10px 0;
+            text-align: center;
+        }
+        nav {
+            margin: 20px 0;
+            text-align: center;
+        }
+        nav a {
+            margin: 0 15px;
+            text-decoration: none;
+            color: #333;
+            font-weight: bold;
+        }
+        .container {
+            display: none;
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .active {
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background: #f2f2f2;
+        }
+        .search-container {
+            margin-top: 20px;
+        }
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px;
+            background: #333;
+            color: #fff;
+            position: relative;
+            bottom: 0;
+            width: 100%;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        .btn {
+            padding: 5px 10px;
+            border: none;
+            color: white;
+            cursor: pointer;
+        }
+        .btn-edit {
+            background-color: #4CAF50; /* Verde */
+        }
+        .btn-delete {
+            background-color: #f44336; /* Vermelho */
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<header>
+    <h1>Controle de Funcionários</h1>
+</header>
+
+<nav>
+    <a href="#" onclick="showPage('home')">Home</a>
+    <a href="#" onclick="showPage('cadastro')">Cadastro</a>
+    <a href="#" onclick="showPage('pesquisar')">Pesquisar</a>
+    <a href="#" onclick="generateXLSX()">Gerar em XLSX</a>
+</nav>
+
+<div id="home" class="container active">
+    <h2>Bem-vindo ao Controle de Funcionários</h2>
+    <p>Utilize o menu acima para navegar pelas funcionalidades.</p>
+</div>
+
+<div id="cadastro" class="container">
+    <h2>Cadastro de Funcionário</h2>
+    <form id="employee-form">
+        <input type="text" id="name" placeholder="Nome" required>
+        <input type="text" id="role" placeholder="Função" required>
+        <input type="date" id="admission-date" required>
+        <input type="submit" value="Adicionar Funcionário">
+    </form>
+    <table>
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Função</th>
+                <th>Data de Admissão</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="employee-list"></tbody>
+    </table>
+</div>
+
+<div id="pesquisar" class="container">
+    <h2>Pesquisar Funcionário</h2>
+    <div class="search-container">
+        <input type="text" id="search-input" placeholder="Buscar por nome" onkeyup="searchEmployee()">
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Função</th>
+                <th>Data de Admissão</th>
+            </tr>
+        </thead>
+        <tbody id="search-results"></tbody>
+    </table>
+</div>
+
+<script>
+    let editIndex = null; // Variável para rastrear o índice do funcionário em edição
+    const employees = JSON.parse(localStorage.getItem('employees')) || [];
+
+    function renderEmployees() {
+        const employeeList = document.getElementById('employee-list');
+        employeeList.innerHTML = ''; // Limpar a tabela
+
+        employees.forEach((emp, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${emp.name}</td>
+                <td>${emp.role}</td>
+                <td>${emp.admissionDate}</td>
+                <td class="action-buttons">
+                    <button class="btn btn-edit" onclick="editEmployee(${index})">Editar</button>
+                    <button class="btn btn-delete" onclick="deleteEmployee(${index})">Remover</button>
+                </td>
+            `;
+            employeeList.appendChild(row);
+        });
+    }
+
+    document.getElementById('employee-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const name = document.getElementById('name').value;
+        const role = document.getElementById('role').value;
+        const admissionDate = document.getElementById('admission-date').value;
+
+        if (editIndex !== null) {
+            // Atualizar o funcionário existente
+            employees[editIndex] = { name, role, admissionDate };
+            editIndex = null; // Resetar o índice de edição
+        } else {
+            // Adicionar novo funcionário
+            employees.push({ name, role, admissionDate });
+        }
+
+        localStorage.setItem('employees', JSON.stringify(employees));
+        renderEmployees(); // Renderizar a lista atualizada
+        this.reset();
+    });
+
+    function editEmployee(index) {
+        const emp = employees[index];
+        document.getElementById('name').value = emp.name;
+        document.getElementById('role').value = emp.role;
+        document.getElementById('admission-date').value = emp.admissionDate;
+
+        editIndex = index; // Definir o índice do funcionário a ser editado
+    }
+
+    function deleteEmployee(index) {
+        employees.splice(index, 1);
+        localStorage.setItem('employees', JSON.stringify(employees));
+        renderEmployees();
+    }
+
+    function showPage(pageId) {
+        const pages = document.querySelectorAll('.container');
+        pages.forEach(page => page.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+
+        if (pageId === 'cadastro') {
+            renderEmployees(); // Renderizar ao entrar na página de cadastro
+        } else if (pageId === 'pesquisar') {
+            searchEmployee(); // Renderizar ao entrar na página de pesquisa
+        }
+    }
+
+    function searchEmployee() {
+        const input = document.getElementById('search-input').value.toLowerCase();
+        const results = employees.filter(emp => emp.name.toLowerCase().includes(input));
+        
+        const searchResults = document.getElementById('search-results');
+        searchResults.innerHTML = ''; // Limpar resultados da pesquisa
+
+        results.forEach(emp => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${emp.name}</td>
+                <td>${emp.role}</td>
+                <td>${emp.admissionDate}</td>
+            `;
+            searchResults.appendChild(row);
+        });
+    }
+
+    function generateXLSX() {
+        const formattedData = employees.map(emp => ({
+            "Nome": emp.name,
+            "Função": emp.role,
+            "Data de Admissão": new Date(emp.admissionDate).toLocaleDateString("pt-BR")
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(formattedData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Funcionários");
+
+        XLSX.writeFile(wb, "funcionarios.xlsx");
+    }
+
+    renderEmployees();
+</script>
+
+<footer>
+    <p>&copy; 2024 Controle de Funcionários. Todos os direitos reservados.</p>
+</footer>
+
+</body>
+</html>
